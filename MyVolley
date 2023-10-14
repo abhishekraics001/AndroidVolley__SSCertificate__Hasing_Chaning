@@ -1,0 +1,57 @@
+package com.bookingcabspartner.app.activity;
+
+import android.content.Context;
+
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.HurlStack;
+import com.android.volley.toolbox.Volley;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+
+public class MyVolley {
+
+    public static RequestQueue newRequestQueue(Context context) {
+        RequestQueue requestQueue = null;
+        try {
+            // Load your custom certificate from a file or resource
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            InputStream caInput = new BufferedInputStream(context.getAssets().open("bookingcabs_com_ssl_cerificate.crt"));
+            Certificate ca = cf.generateCertificate(caInput);
+            caInput.close();
+
+            // Create a KeyStore containing the trusted certificate
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, null);
+            keyStore.setCertificateEntry("ca", ca);
+
+            // Create a TrustManager that trusts the certificate
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(keyStore);
+
+            // Create an SSLContext with the custom TrustManager
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, tmf.getTrustManagers(), null);
+
+            // Set the custom SSLContext for your Volley request
+            HurlStack stack = new HurlStack(null, sslContext.getSocketFactory());
+            requestQueue = Volley.newRequestQueue(context, stack);
+
+            // Make your API request
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return requestQueue;
+    }
+}
